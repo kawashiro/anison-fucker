@@ -18,6 +18,7 @@
 .dat*
 .repl_history
 build/
+bin/tor
 *.bridgesupport
 build-iPhoneOS/
 build-iPhoneSimulator/
