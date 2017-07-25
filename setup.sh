@@ -4,6 +4,7 @@
 ##
 
 TOR_VERSION=0.3.0.9
+APP_VERSION=0.0.1-1
 
 run()
 {
@@ -63,14 +64,36 @@ build_app()
     build_tor "$libexec_dir/tor"
 }
 
+build_deb()
+{
+    run mkdir -p "build/debian/DEBIAN"
+    run rm -f dist/*.deb
+    arch=$(uname -m)
+    if [ "$arch" = "x86_64" ]; then
+        arch="amd64"
+    fi
+    size=$(du -d0 "build/debian/usr" | sed -e 's/\s\+.*$//')
+    cat "pkg/debian/control.skel" \
+        | sed -e "s/{arch}/${arch}/gi" \
+        | sed -e "s/{size}/${size}/gi" \
+        > "build/debian/DEBIAN/control"
+    build_app "build/debian"
+    this_dir="$PWD"
+    cd "build/debian"
+    md5sum $(find usr/ -type f) > "DEBIAN/md5sums"
+    cd "$this_dir"
+    run fakeroot dpkg-deb --build "build/debian"
+    run mkdir -p "dist"
+    run mv "build/debian.deb" "dist/ruby-anison-fucker_${APP_VERSION}-${arch}.deb"
+}
+
 
 case "$1" in
     install)
         build_app "$2"
         ;;
     deb)
-        # TODO: Implement
-        echo "Not implemented :("
+        build_deb
         ;;
     dev)
         build_tor "bin/tor"

@@ -1,0 +1,11 @@
+Package: ruby-anison-fucker
+Version: 0.0.1-1
+Architecture: {arch}
+Maintainer: Kawashiro Nitori <nitori@kawashi.ro>
+Installed-Size: {size}
+Depends: ruby (>= 1:2.1)
+Section: ruby
+Priority: optional
+Homepage: https://github.com/kawashiro/anison-fucker
+Description: Fuck you, anison.fm!
+Ruby-Versions: all
