@@ -2,31 +2,47 @@
 # Main implementation of anison-fucker app
 ##
 
-require 'curl'
+require 'anison-fucker/captcha'
+require 'anison-fucker/log'
+require 'anison-fucker/remote/anison'
+require 'anison-fucker/remote/mail'
+require 'anison-fucker/remote/user-agent'
 require 'anison-fucker/proxy/tor'
 
 
 module AnisonFucker
-  class Application
+  module Application
     # Run application
-    def run
-      # TODO: Implement
-      Log.instance.info 'tor proxy test ...'
-      proxy_provider = Proxy::Tor::TorProxyProvider.new
-      loop do
-        proxy = proxy_provider.next_proxy
-        curl = Curl::Easy.new 'http://ifconfig.co/'
-        curl.proxy_type = proxy.type
-        curl.proxy_url = proxy.url
-        curl.headers['User-Agent'] = 'curl/1.0.0'
-        curl.perform
-        Log.instance.info('curl') { curl.body_str }
-        sleep 5
+    #   song_id   Integer
+    def self.run(song_id)
+      log = Log.instance
+      tor_service_wrapper = Proxy::Tor::ServiceWrapper.new
+
+      raise 'Invalid song ID provided' unless song_id > 0
+
+      Remote::Anison.captcha_resolver = Captcha::ManualResolver.new
+      Remote::Anison.mail_service = Remote::TemporaryMail.new
+      Remote::Anison.proxy_provider = Proxy::Tor::TorProxyProvider.new tor_service_wrapper
+      Remote::Anison.user_agent_provider = Remote::RemoteUserAgentList.new
+      Remote::Anison.credentials_provider = Remote::AnisonCredentialsList.new
+
+      # TODO: Monitor required sessions count
+      Remote::Anison.session 20 do |anison|
+        log.info "Voting for song \##{song_id} as #{anison.login}"
+        begin
+          anison.vote song_id
+          log.info 'Voted successfully!'
+        rescue Remote::Anison::VoteError => e
+          log.warn "Failed to vote as #{anison.login}: #{e.message}"
+        end
       end
+
     rescue Interrupt
-      Log.instance.info 'Interrupted!'
+      log.warn 'Interrupted!'
+    rescue => e
+      log.error "Failed to move your song to the top: #{e.message}"
     ensure
-      proxy_provider.stop_tor
+      tor_service_wrapper.stop if tor_service_wrapper.started?
     end
   end
 end

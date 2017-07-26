@@ -74,6 +74,7 @@ module AnisonFucker
         def stop
           raise 'Tor is not started' unless @tor_pid
           Process.kill 'INT', @tor_pid
+          Process.wait @tor_pid rescue nil
           sleep 0.1
           @ready = false
           @tor_pid = nil

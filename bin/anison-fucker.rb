@@ -14,5 +14,6 @@ require 'anison-fucker/application'
 
 
 if $0 == __FILE__
-  AnisonFucker::Application.new.run
+  song_id = $*[0].to_i
+  AnisonFucker::Application.run song_id
 end
