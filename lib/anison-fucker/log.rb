@@ -21,7 +21,7 @@ module AnisonFucker
           when :DEBUG
             full_msg.light_black
           when :INFO
-            full_msg.black
+            full_msg
           when :WARN
             full_msg.yellow
           when :ERROR
