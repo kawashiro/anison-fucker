@@ -3,6 +3,7 @@
 ##
 
 require 'curl'
+require 'thread'
 
 
 module AnisonFucker
@@ -36,6 +37,7 @@ module AnisonFucker
       #   body  String
       def fetch_url_curl(url, body = nil)
         verb = body ? :POST : :GET
+        Thread.current[:curb_curl] = nil
         Curl.http verb, url, body do |curl|
           if @proxy
             curl.proxy_type = @proxy.type
