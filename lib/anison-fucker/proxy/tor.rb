@@ -14,7 +14,7 @@ module AnisonFucker
       class ServiceWrapper
         # Tor installations available
         TOR_DEV  = File.realpath("#{File.dirname $0}/tor") rescue ''
-        TOR_PROD = File.realpath("#{File.dirname File.realpath $0}/../lib/anison-fucker/libexec") rescue ''
+        TOR_PROD = File.realpath("#{File.dirname File.realpath $0}/../lib/anison-fucker/libexec/tor") rescue ''
 
         # Tor proxy params
         TOR_PROXY_HOST = '127.0.0.1'
@@ -105,7 +105,7 @@ module AnisonFucker
         # Try to find tor binary to launch
         def find_tor_binary
           paths = [TOR_DEV, TOR_PROD]
-          paths += `whereis tor`.split(/\s+/).select { |p| p=~ %r`/bin/` }
+          paths += `whereis tor`.split(/\s+/).select { |p| p =~ %r`/bin/` }
           paths.each do |path|
             return path if File.exist? path
           end

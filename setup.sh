@@ -82,6 +82,7 @@ build_deb()
     cd "build/debian"
     md5sum $(find usr/ -type f) > "DEBIAN/md5sums"
     cd "$this_dir"
+    run chmod -R g-w "build/debian"
     run fakeroot dpkg-deb --build "build/debian"
     run mkdir -p "dist"
     run mv "build/debian.deb" "dist/ruby-anison-fucker_${APP_VERSION}-${arch}.deb"
