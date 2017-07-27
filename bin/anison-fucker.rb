@@ -15,5 +15,6 @@ require 'anison-fucker/application'
 
 if $0 == __FILE__
   song_id = $*[0].to_i
-  AnisonFucker::Application.run song_id
+  accounts = ($*[1] || 20).to_i
+  AnisonFucker::Application.run song_id, accounts
 end
