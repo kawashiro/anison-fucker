@@ -13,7 +13,7 @@ module AnisonFucker
       # Launches tor service & checks it's state
       class ServiceWrapper
         # Tor installations available
-        TOR_DEV  = File.realpath('tor') rescue ''
+        TOR_DEV  = File.realpath("#{File.dirname $0}/tor") rescue ''
         TOR_PROD = File.realpath("#{File.dirname File.realpath $0}/../lib/anison-fucker/libexec") rescue ''
 
         # Tor proxy params
