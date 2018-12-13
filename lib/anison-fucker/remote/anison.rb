@@ -135,7 +135,7 @@ module AnisonFucker
       def session(times = 1)
         log = Log.instance
         loop do
-          break if times == 0
+          break if times <= 0
           times -= 1
 
           log.info 'Starting new anison session'
