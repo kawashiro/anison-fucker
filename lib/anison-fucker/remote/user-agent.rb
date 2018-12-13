@@ -2,7 +2,6 @@
 # Remote user agent list fetch
 ##
 
-require 'nokogiri'
 require 'anison-fucker/log'
 require 'anison-fucker/remote'
 
@@ -33,13 +32,12 @@ module AnisonFucker
     # Remote service to fetch user agents
     class UserAgentListService < RemoteService
       # User agents list URL
-      USER_AGENTS_LIST_URL = 'http://bit.ly/2tZw6ir'
+      USER_AGENTS_LIST_URL = 'https://bit.ly/2zW01Or'
 
       # Get all remote user agents
       def get_user_agents
-        xml_data = fetch_url USER_AGENTS_LIST_URL
-        nodes = Nokogiri::XML(xml_data).xpath '//folder[contains(@description, "Browsers")]/useragent'
-        nodes.map { |node| node.attribute('useragent').to_s }
+        txt_data = fetch_url USER_AGENTS_LIST_URL
+        txt_data.split("\n").map(&:strip)
       end
     end
   end

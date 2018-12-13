@@ -8,12 +8,16 @@ require 'uri'
 require 'anison-fucker/log'
 require 'anison-fucker/remote'
 require 'anison-fucker/remote/ip-checker'
+require 'anison-fucker/remote/names-fetcher'
+require 'anison-fucker/utils'
 
 
 module AnisonFucker
   module Remote
     # Main anison service class
     class Anison < RemoteService
+      include Utils
+
       attr_reader :login
 
       # Base url
@@ -54,7 +58,7 @@ module AnisonFucker
         register_page_curl = fetch_url_curl '/user/join'
         register_page = register_page_curl.body_str
         headers = register_page_curl.header_str
-        php_session = headers[/PHPSESSID=([0-9a-f]+?);/, 1]
+        php_session = headers[/PHPSESSID=([0-9a-z]+?);/, 1]
         @auth_cookies = "PHPSESSID=#{php_session}"
 
         captcha_url = Nokogiri::HTML(register_page).css('img[src^="/captcha"]').attribute('src').to_s
@@ -87,6 +91,16 @@ module AnisonFucker
         end
       end
 
+      # Get current songs queue
+      def get_status(song_id)
+        status = JSON.parse fetch_url '/status.php'
+        top_song_status = keys_to_sym status['orders_list'].reject { |st| st['song_id'].to_i == song_id }.first
+        my_song_status = status['orders_list'].select { |st| st['song_id'].to_i == song_id }.first
+        my_song_status = keys_to_sym my_song_status if my_song_status
+
+        { top_song_status: top_song_status, my_song_status: my_song_status }
+      end
+
       protected
 
       # Hack with encoding
@@ -103,6 +117,7 @@ module AnisonFucker
       def fetch_url_curl(url, body = nil)
         super "#{BASE_URL}#{url}", body do |curl|
           curl.headers['Cookie'] = @auth_cookies if @auth_cookies
+          curl.headers['Referer'] = BASE_URL
         end
       end
 
@@ -132,7 +147,7 @@ module AnisonFucker
           log.info "PROXY: #{proxy_settings.url}"
           log.info "UA:    #{user_agent}"
           log.info "LOGIN: #{login}"
-          log.info "IP:    #{ip[:ip]} (#{ip[:country]})"
+          log.info "IP:    #{ip[:query]} (#{ip[:country]})"
           anison = new user_agent, proxy_settings
           begin
             should_register = false
@@ -150,13 +165,14 @@ module AnisonFucker
             end
             log.info 'Awaiting for confirmation e-mail'
             @mail_service.on_new_email do |mail|
-              token = mail[:bodyPlainText][%r`http://anison\.fm/user/join-confirm\?token=([0-9a-z]+)`i, 1]
+              token = mail[:bodyPlainText][%r`попробуйте ввести код \(([0-9a-z]+)\) вручную`i, 1]
               next if !token || token.empty?
               log.info "Got e-mail token: #{token}"
               anison.confirm_email token
               break
             end
             anison.authorize login, password
+            @credentials_provider.save_login! login
           end
 
           yield anison
@@ -201,21 +217,49 @@ module AnisonFucker
     # Fixed credentials list
     class AnisonCredentialsList
       # Logins prefix
-      LOGIN_MASK = 'Huj-%03d'
+      LOGIN_MASK = '%s%03d'
 
       # Fixed password
       PASSWORD = 'qweqwe'
 
-      # Set account init number
+      LOGINS_FILE = "#{ENV['HOME']}/.anison-logins.txt"
+
+      # # Set account init number
       def initialize
-        @acc_number = 500
+        @known_logins = nil
+        @unknown_logins = []
       end
 
       # Get next credentials pair
       def next
-        credentials = [LOGIN_MASK % @acc_number, PASSWORD]
-        @acc_number += 1
-        credentials
+        unless @known_logins
+          known_logins = []
+          if File.exist? LOGINS_FILE
+            File.open LOGINS_FILE do |f|
+              known_logins = f.readlines.map(&:strip).reject(&:empty?)
+            end
+          end
+          @known_logins = known_logins.shuffle
+        end
+
+        if @known_logins.empty?
+          if @unknown_logins.empty?
+            names = NamesFetcher.new.get_random_names
+            logins = names.map { |n| LOGIN_MASK % [n, Random.rand(999)] }
+            @unknown_logins = logins
+          end
+          login = @unknown_logins.shift
+        else
+          login = @known_logins.shift
+        end
+
+        [login, PASSWORD]
+      end
+
+      # save login as successfully registered
+      #   login   String
+      def save_login!(login)
+        File.open(LOGINS_FILE, 'a') { |f| f << login << "\n" }
       end
     end
   end

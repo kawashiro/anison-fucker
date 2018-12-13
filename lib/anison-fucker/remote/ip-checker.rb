@@ -13,7 +13,7 @@ module AnisonFucker
       include Utils
 
       # Checker URL
-      CHECKER_URL = 'http://ifconfig.co/json'
+      CHECKER_URL = 'http://ip-api.com/json'
 
       # Get remote IP address detailed info
       def get_ip_info
