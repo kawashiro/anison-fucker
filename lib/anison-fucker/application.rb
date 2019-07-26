@@ -56,7 +56,7 @@ module AnisonFucker
           end
         end
 
-        sleep 10 if votes_to_do == 0
+        sleep 10 if votes_to_do <= 0
       end
 
     rescue Interrupt
